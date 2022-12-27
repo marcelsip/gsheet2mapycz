@@ -1,0 +1,115 @@
+
+<script>
+
+    // přiřazení symbolů jednotlivým hodnotám ve sloupci category
+    var config = {
+      categories: {
+        "category_0": "https://drive.google.com/uc?export=view&id=1cNGz-nYkVC9ievGGmnobFmcWVT7GGg8L", // šedá
+        "category_1": "https://drive.google.com/uc?export=view&id=1vWJf3CRE9zXQP_fp2KlKLcLIlLAFR0GZ", // zelená
+        "category_2": "https://drive.google.com/uc?export=view&id=19JEN15q8qClNFRMr91dAxhBuwVjifFCb", // červená
+        "category_3": "https://drive.google.com/uc?export=view&id=1P3359cCXWkG8UHAV0BbdgOqnJryzPl_3", // žlutá
+        "category_4": "https://drive.google.com/uc?export=view&id=1j-r6ZpN3ruQt6XhbczZVrbzwYVeA45fQ" // tmavě šedá
+      }
+    }
+  
+    // po načtení dat pomocí fce getData volá vykreslení pomocí showData
+    google.script.run.withSuccessHandler(showData).getData();
+   
+    /**
+     * Funkce zobrazí data v mapě
+     */
+    function showData(items){
+      var map = initMap("map");
+  
+      var markers = [];
+      items.forEach(item => {
+        markers.push(createMarker(item));
+      });
+  
+      addMarkers(map, markers);
+    }
+  
+    /**
+     * inicializuje mapu 
+     */
+    function initMap(divId) {
+      var map = new SMap(JAK.gel("map"));
+      
+      // turistický podklad
+      map.addDefaultLayer(SMap.DEF_BASE);
+      map.addDefaultLayer(SMap.DEF_OPHOTO);
+      map.addDefaultLayer(SMap.DEF_OPHOTO0203);
+      map.addDefaultLayer(SMap.DEF_OPHOTO0406);
+      map.addDefaultLayer(SMap.DEF_TURIST_WINTER);
+      map.addDefaultLayer(SMap.DEF_TURIST).enable();
+      
+      // základní ovládací prvky
+      //map.addDefaultControls();
+  
+      // ovládání myší
+      var mouse = new SMap.Control.Mouse(SMap.MOUSE_PAN | SMap.MOUSE_WHEEL | SMap.MOUSE_ZOOM);
+      map.addControl(mouse);
+  
+      // synchronizace s velikostí okna
+      map.addControl(new SMap.Control.Sync());
+  
+      // zoom obdélníkem
+      map.addControl(new SMap.Control.Selection()); 
+  
+      // přepínač vrstev
+      var layerSwitch = new SMap.Control.Layer({
+        items: 6
+      });
+      layerSwitch.addDefaultLayer(SMap.DEF_BASE);
+      layerSwitch.addDefaultLayer(SMap.DEF_OPHOTO);
+      layerSwitch.addDefaultLayer(SMap.DEF_OPHOTO0203);
+      layerSwitch.addDefaultLayer(SMap.DEF_OPHOTO0406);
+      layerSwitch.addDefaultLayer(SMap.DEF_TURIST);
+      layerSwitch.addDefaultLayer(SMap.DEF_TURIST_WINTER);
+      map.addControl(layerSwitch, { left: "10px", top:"10px" });
+  
+      return map;
+    }
+  
+    /**
+     * přidá vytvořené značky do mapy
+     */ 
+    function addMarkers(map, markers) {
+  
+      var markerLayer = new SMap.Layer.Marker();
+      map.addLayer(markerLayer);                    
+      markerLayer.enable();
+      
+      for (var i=0; i<markers.length; i++) {
+        markerLayer.addMarker(markers[i]);
+      }
+    }
+  
+    /**
+     * vytvoří z dat řádku novou značku do mapy
+     */
+    function createMarker(item) {
+  
+      var coords = SMap.Coords.fromWGS84(item.lon, item.lat);
+  
+      // info okno
+      var card = new SMap.Card();
+      card.getHeader().innerHTML = "<b>" + item.title + "</b>";
+      card.getBody().innerHTML = "<p>" + item.category + "</p><p>" +  item.description + "</p><p><a href=\"" + item.link + "\"/>" +  item.link + "</a></p>";
+  
+      var options = {
+        title: item.title
+      }
+  
+      // odlišné symboly dle stavu - pokud je uvedeno v konfiguraci výše
+      if (config.categories) {
+        options.url = config.categories[item.category];
+      }
+  
+      var marker = new SMap.Marker(coords, null, options);
+      marker.decorate(SMap.Marker.Feature.Card, card);
+      return marker;
+    }
+  
+  
+  </script>
